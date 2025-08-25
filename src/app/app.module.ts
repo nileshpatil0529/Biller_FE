@@ -8,6 +8,8 @@ import { AuthGuard } from './auth/auth.guard';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { MatInputModule } from '@angular/material/input';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
+import { MatOptionModule } from '@angular/material/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { LoginComponent } from './auth/login.component';
@@ -52,7 +54,9 @@ import { ConfirmDialogComponent } from './shared/confirm-dialog.component';
 				 MatTableModule,
 				 MatPaginatorModule,
 				 MatDialogModule,
-				 MatMenuModule
+				 MatMenuModule,
+				 MatAutocompleteModule,
+				 MatOptionModule
 			 ],
 	providers: [AuthService, AuthGuard, ProductsService],
 	bootstrap: [AppComponent]

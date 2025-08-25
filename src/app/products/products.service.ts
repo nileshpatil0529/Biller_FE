@@ -7,6 +7,7 @@ export interface Product {
   unit: string;
   price: number;
   stockQty: number;
+  sell_qty?: number;
 }
 
 @Injectable({ providedIn: 'root' })

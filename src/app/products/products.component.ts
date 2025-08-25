@@ -1,14 +1,12 @@
-
-
-import { Component, OnInit, ViewChild, AfterViewInit } from '@angular/core';
+import { Component, OnInit, ViewChild, AfterViewInit, ElementRef } from '@angular/core';
 import { MatPaginator, PageEvent } from '@angular/material/paginator';
 import { MatTableDataSource } from '@angular/material/table';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { ViewChild as NgViewChild, ElementRef } from '@angular/core';
+import { MatAutocompleteTrigger } from '@angular/material/autocomplete';
 import { MatDialog } from '@angular/material/dialog';
 import { ConfirmDialogComponent } from '../shared/confirm-dialog.component';
 import { ProductsService, Product } from './products.service';
-import { ActivatedRoute, Router } from '@angular/router';
+import { Router } from '@angular/router';
 
 
 @Component({
@@ -18,18 +16,13 @@ import { ActivatedRoute, Router } from '@angular/router';
 })
 
 export class ProductsComponent implements OnInit, AfterViewInit {
-  applyFilter(event: Event) {
-    const filterValue = (event.target as HTMLInputElement).value;
-    this.dataSource.filter = filterValue.trim().toLowerCase();
-  }
-
-  clearFilter(input?: HTMLInputElement) {
-    this.dataSource.filter = '';
-    if (input) {
-      input.value = '';
-    }
-  }
+  // Properties
+  productSearch = '';
   products: Product[] = [];
+  filteredProducts: Product[] = [];
+  selectedProductInDropdown: Product | null = null;
+  
+  // Table properties
   dataSource = new MatTableDataSource<Product>();
   pageSize = 5;
   pageSizeOptions = [5, 10, 20, 30, 40, 50];
@@ -69,32 +62,116 @@ export class ProductsComponent implements OnInit, AfterViewInit {
 
   ngOnInit(): void {
     this.isHomeView = this.router.url === '/home';
+    this.loadProducts();
+    
+    if (this.isHomeView) {
+      this.displayedColumns = ['name', 'nameHindi', 'unit', 'price', 'actions'];
+    }
+  }
+
+  private loadProducts(): void {
     this.products = this.productsService.getProducts();
+    
     if (this.isHomeView) {
       this.products = this.products.map(p => ({ ...p, sell_qty: 0 }));
-      this.displayedColumns = [
-        'name',
-        'nameHindi',
-        'unit',
-        'price',
-        'actions',
-      ];
     }
+    
+    this.updateDataSource();
+    this.filteredProducts = this.products;
+  }
+
+  private updateDataSource(): void {
     this.total = this.products.length;
-    this.dataSource = new MatTableDataSource<Product>(this.products);
+    this.dataSource.data = this.products;
   }
-  // For home view: increment/decrement sell_qty
-  incrementQty(product: any) {
+  applyFilterAutocomplete(value: string) {
+    const filterValue = value ? value.trim().toLowerCase() : '';
+    this.filteredProducts = this.products.filter(product =>
+      product.code.toLowerCase().includes(filterValue) ||
+      product.name.toLowerCase().includes(filterValue) ||
+      product.nameHindi.toLowerCase().includes(filterValue) ||
+      product.unit.toLowerCase().includes(filterValue)
+    );
+  }
+
+  @ViewChild('searchInput') searchInput!: ElementRef;
+  @ViewChild(MatAutocompleteTrigger) autocompleteTrigger!: MatAutocompleteTrigger;
+
+  clearFilterAutocomplete() {
+    this.productSearch = '';
+    this.filteredProducts = [];
+    
+    // Close panel and remove focus
+    if (this.autocompleteTrigger) {
+      this.autocompleteTrigger.closePanel();
+    }
+    if (this.searchInput && this.searchInput.nativeElement) {
+      this.searchInput.nativeElement.blur();
+    }
+    
+    // Reset products list after panel is closed
+    requestAnimationFrame(() => {
+      this.filteredProducts = this.products;
+    });
+  }
+
+  displayProduct(product?: Product | null): string {
+    return product && product.code ? `${product.code} - ${product.name}` : '';
+  }
+
+  private focusAndSelectSearchInput() {
+    if (this.searchInput && this.searchInput.nativeElement) {
+      const inputElement = this.searchInput.nativeElement as HTMLInputElement;
+      
+      // Focus the input
+      inputElement.focus();
+      
+      // If there's text in the input, select it
+      setTimeout(() => {
+        if (this.productSearch) {
+          inputElement.select();
+        }
+        
+        // Open the autocomplete panel
+        if (this.autocompleteTrigger) {
+          this.autocompleteTrigger.openPanel();
+        }
+      }, 0);
+    }
+  }
+  // For home view: increment/decrement sell_qty and handle selection
+  handleQtyButton(product: Product, action: 'increment' | 'decrement', event: Event) {
+    event.stopPropagation();
+    
+    // Update quantity
     if (typeof product.sell_qty !== 'number') product.sell_qty = 0;
-    product.sell_qty++;
+    if (action === 'increment') {
+      product.sell_qty++;
+    } else if (action === 'decrement' && product.sell_qty > 0) {
+      product.sell_qty--;
+    }
+
+    // Find the matching product from the original products array
+    const matchingProduct = this.products.find(p => p.code === product.code);
+    
+    // Update product search and focus input
+    this.selectedProductInDropdown = matchingProduct || product;
+    this.productSearch = this.displayProduct(matchingProduct || product);
+    this.focusAndSelectSearchInput();
   }
-  decrementQty(product: any) {
-    if (typeof product.sell_qty !== 'number') product.sell_qty = 0;
-    if (product.sell_qty > 0) product.sell_qty--;
-  }
-  onSellQtyInput(product: any, event: any) {
+
+  onSellQtyInput(product: Product, event: any) {
+    event.stopPropagation();
     const val = parseInt(event.target.value, 10);
     product.sell_qty = isNaN(val) ? 0 : val;
+    
+    // Find the matching product from the original products array
+    const matchingProduct = this.products.find(p => p.code === product.code);
+    
+    // Update product search and focus input
+    this.selectedProductInDropdown = matchingProduct || product;
+    this.productSearch = this.displayProduct(matchingProduct || product);
+    this.focusAndSelectSearchInput();
   }
 
   ngAfterViewInit(): void {
@@ -143,12 +220,13 @@ export class ProductsComponent implements OnInit, AfterViewInit {
 
   saveProduct(): void {
     if (this.productForm.invalid) return;
+    
     const product = this.productForm.value;
+    
     if (this.addingRow) {
       this.productsService.addProduct(product);
       this.addingRow = false;
     } else if (this.editingProduct) {
-      // Find the index in the full products array
       const idx = this.products.findIndex((p) => p === this.editingProduct);
       if (idx !== -1) {
         this.productsService.updateProduct(idx, product);
@@ -156,17 +234,14 @@ export class ProductsComponent implements OnInit, AfterViewInit {
       this.showForm = false;
       this.editingProduct = null;
     }
-    this.products = this.productsService.getProducts();
-    this.dataSource.data = this.products;
-    this.total = this.products.length;
+    
+    this.loadProducts();
     this.productForm.reset({ price: 0, stockQty: 0 });
   }
 
   cancelNewRow(): void {
     this.addingRow = false;
-    this.products = this.productsService.getProducts();
-    this.dataSource.data = this.products;
-    this.total = this.products.length;
+    this.loadProducts();
     this.productForm.reset({ price: 0, stockQty: 0 });
   }
 
@@ -177,12 +252,11 @@ export class ProductsComponent implements OnInit, AfterViewInit {
         message: 'Are you sure you want to delete this product?',
       },
     });
+    
     const confirmed = await dialogRef.afterClosed().toPromise();
     if (confirmed) {
       this.productsService.deleteProduct(index);
-      this.products = this.productsService.getProducts();
-      this.total = this.products.length;
-      this.dataSource.data = this.products;
+      this.loadProducts();
     }
   }
 
