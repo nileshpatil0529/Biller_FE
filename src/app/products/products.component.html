@@ -1,6 +1,6 @@
 <div class="container mt-2">
   <div class="top-bar-row mt-3">
-    <button *ngIf="!isHomeView" mat-raised-button color="primary" class="mb-4" [matMenuTriggerFor]="actionsMenu">
+  <button mat-raised-button color="primary" class="mb-4" [matMenuTriggerFor]="actionsMenu">
       Actions <mat-icon>arrow_drop_down</mat-icon>
     </button>
     <mat-menu #actionsMenu="matMenu">
@@ -25,11 +25,6 @@
               <td class="price-col">₹{{ product.price }}</td>
               <td class="stock-col">{{ product.stockQty }}</td>
               <td class="actions-col">
-                <div class="mat-btn-group sell-qty-group pointer-all">
-                  <button mat-stroked-button color="warn" class="qty-btn" (click)="handleQtyButton(product, 'decrement', $event)">-</button>
-                  <input type="number" min="0" [value]="product.sell_qty || 0" (input)="onSellQtyInput(product, $event); $event.stopPropagation();" name="sell_qty" class="qty-input" />
-                  <button mat-stroked-button color="primary" class="qty-btn" (click)="handleQtyButton(product, 'increment', $event)">+</button>
-                </div>
               </td>
             </tr>
           </table>
@@ -40,7 +35,7 @@
     </mat-form-field>
   </div>
   <table mat-table [dataSource]="dataSource" class="mat-elevation-z2 w-100 products-table">
-    <ng-container *ngIf="!isHomeView" matColumnDef="code">
+  <ng-container matColumnDef="code">
       <th mat-header-cell *matHeaderCellDef>Product Code</th>
       <td mat-cell *matCellDef="let product; let i = index">
         <form *ngIf="
@@ -103,7 +98,7 @@
         <ng-template #showPrice>{{ product.price }}</ng-template>
       </td>
     </ng-container>
-    <ng-container *ngIf="!isHomeView" matColumnDef="stockQty">
+  <ng-container matColumnDef="stockQty">
       <th mat-header-cell *matHeaderCellDef>Stock Qty</th>
       <td mat-cell *matCellDef="let product; let i = index">
         <form *ngIf="
@@ -118,18 +113,7 @@
     <ng-container matColumnDef="actions">
       <th mat-header-cell *matHeaderCellDef>Actions</th>
       <td mat-cell *matCellDef="let product; let i = index">
-        <ng-container *ngIf="isHomeView">
-          <div class="mat-btn-group sell-qty-group">
-            <button mat-stroked-button color="warn" (click)="handleQtyButton(product, 'decrement', $event)" class="qty-btn">
-              -
-            </button>
-            <input type="number" min="0" [value]="product.sell_qty || 0" (input)="onSellQtyInput(product, $event)" name="sell_qty" class="qty-input" />
-            <button mat-stroked-button color="primary" (click)="handleQtyButton(product, 'increment', $event)" class="qty-btn">
-              +
-            </button>
-          </div>
-        </ng-container>
-        <ng-container *ngIf="!isHomeView">
+  <!-- Removed sell_qty button group -->
           <ng-container *ngIf="addingRow && i === 0">
             <button mat-button color="primary" (click)="saveProduct()">
               Save
@@ -157,9 +141,8 @@
               <mat-icon>delete</mat-icon>
             </button>
           </ng-container>
-        </ng-container>
-      </td>
-    </ng-container>
+        </td>
+      </ng-container>
     <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
     <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
     <!-- No data row removed; message will be shown below the table -->

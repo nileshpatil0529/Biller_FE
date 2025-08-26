@@ -36,7 +36,6 @@ export class ProductsComponent implements OnInit, AfterViewInit {
     'stockQty',
     'actions',
   ];
-  isHomeView = false;
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   productForm: FormGroup;
   editingProduct: Product | null = null;
@@ -61,33 +60,18 @@ export class ProductsComponent implements OnInit, AfterViewInit {
   }
 
   ngOnInit(): void {
-    this.isHomeView = this.router.url === '/home';
-    this.loadProducts();
-    
-    if (this.isHomeView) {
-      this.displayedColumns = ['name', 'nameHindi', 'unit', 'price', 'actions'];
-    }
+  this.loadProducts();
   }
 
   private loadProducts(): void {
-    this.products = this.productsService.getProducts();
-    
-    if (this.isHomeView) {
-      this.products = this.products.map(p => ({ ...p, sell_qty: 0 }));
-    }
-    
-    this.updateDataSource();
-    this.filteredProducts = this.products;
+  this.products = this.productsService.getProducts();
+  this.updateDataSource();
+  this.filteredProducts = this.products;
   }
 
   private updateDataSource(): void {
-    // For home view, only show products with sell_qty > 0
-    const displayProducts = this.isHomeView 
-      ? this.products.filter(p => (p.sell_qty || 0) > 0)
-      : this.products;
-
-    this.total = displayProducts.length;
-    this.dataSource.data = displayProducts;
+  this.total = this.products.length;
+  this.dataSource.data = this.products;
   }
   applyFilterAutocomplete(value: string) {
     const filterValue = value ? value.trim().toLowerCase() : '';
@@ -144,52 +128,7 @@ export class ProductsComponent implements OnInit, AfterViewInit {
       }, 0);
     }
   }
-  // For home view: increment/decrement sell_qty and handle selection
-  handleQtyButton(product: Product, action: 'increment' | 'decrement', event: Event) {
-    event.stopPropagation();
-    
-    // Update quantity
-    if (typeof product.sell_qty !== 'number') product.sell_qty = 0;
-    if (action === 'increment') {
-      product.sell_qty++;
-    } else if (action === 'decrement' && product.sell_qty > 0) {
-      product.sell_qty--;
-    }
-
-    // Find the matching product from the original products array
-    const matchingProduct = this.products.find(p => p.code === product.code);
-    if (matchingProduct) {
-      matchingProduct.sell_qty = product.sell_qty;
-    }
-    
-    // Update product search and focus input
-    this.selectedProductInDropdown = matchingProduct || product;
-    this.productSearch = this.displayProduct(matchingProduct || product);
-    this.focusAndSelectSearchInput();
-
-    // Update table data to show/hide based on sell_qty
-    this.updateDataSource();
-  }
-
-  onSellQtyInput(product: Product, event: any) {
-    event.stopPropagation();
-    const val = parseInt(event.target.value, 10);
-    product.sell_qty = isNaN(val) ? 0 : val;
-    
-    // Find the matching product from the original products array
-    const matchingProduct = this.products.find(p => p.code === product.code);
-    if (matchingProduct) {
-      matchingProduct.sell_qty = product.sell_qty;
-    }
-    
-    // Update product search and focus input
-    this.selectedProductInDropdown = matchingProduct || product;
-    this.productSearch = this.displayProduct(matchingProduct || product);
-    this.focusAndSelectSearchInput();
-
-    // Update table data to show/hide based on sell_qty
-    this.updateDataSource();
-  }
+  // ...existing code...
 
   ngAfterViewInit(): void {
     this.dataSource.paginator = this.paginator;

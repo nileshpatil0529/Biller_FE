@@ -2,11 +2,11 @@ import { Component, OnInit, ViewChild, AfterViewInit, ElementRef } from '@angula
 import { MatPaginator, PageEvent } from '@angular/material/paginator';
 import { MatTableDataSource } from '@angular/material/table';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { MatAutocompleteTrigger } from '@angular/material/autocomplete';
 import { MatDialog } from '@angular/material/dialog';
 import { ConfirmDialogComponent } from '../shared/confirm-dialog.component';
 import { ProductsService, Product } from '../products/products.service';
 import { Router } from '@angular/router';
+import { MatAutocompleteTrigger } from '@angular/material/autocomplete';
 
 @Component({
   selector: 'app-home',
@@ -16,8 +16,6 @@ import { Router } from '@angular/router';
 export class HomeComponent implements OnInit, AfterViewInit {
   productSearch = '';
   products: Product[] = [];
-  filteredProducts: Product[] = [];
-  selectedProductInDropdown: Product | null = null;
   dataSource = new MatTableDataSource<Product>();
   pageSize = 5;
   pageSizeOptions = [5, 10, 20, 30, 40, 50];
@@ -31,15 +29,16 @@ export class HomeComponent implements OnInit, AfterViewInit {
     'stockQty',
     'actions',
   ];
-  isHomeView = true;
   @ViewChild(MatPaginator) paginator!: MatPaginator;
-  @ViewChild('searchInput') searchInput!: ElementRef;
-  @ViewChild(MatAutocompleteTrigger) autocompleteTrigger!: MatAutocompleteTrigger;
   productForm: FormGroup;
   editingProduct: Product | null = null;
   showForm = false;
   addingRow = false;
   units: string[] = ['pcs', 'box', 'kg', 'ltr', 'meter', 'dozen'];
+  filteredProducts: Product[] = [];
+  selectedProductInDropdown: Product | null = null;
+  @ViewChild('searchInput') searchInput!: ElementRef;
+  @ViewChild(MatAutocompleteTrigger) autocompleteTrigger!: MatAutocompleteTrigger;
 
   constructor(
     private fb: FormBuilder,
@@ -58,103 +57,13 @@ export class HomeComponent implements OnInit, AfterViewInit {
   }
 
   ngOnInit(): void {
-    this.isHomeView = this.router.url === '/home';
     this.loadProducts();
-    if (this.isHomeView) {
-      this.displayedColumns = ['name', 'nameHindi', 'unit', 'price', 'actions'];
-    }
   }
 
   private loadProducts(): void {
     this.products = this.productsService.getProducts();
-    if (this.isHomeView) {
-      this.products = this.products.map(p => ({ ...p, sell_qty: 0 }));
-    }
-    this.updateDataSource();
-    this.filteredProducts = this.products;
-  }
-
-  private updateDataSource(): void {
-    const displayProducts = this.isHomeView
-      ? this.products.filter(p => (p.sell_qty || 0) > 0)
-      : this.products;
-    this.total = displayProducts.length;
-    this.dataSource.data = displayProducts;
-  }
-
-  applyFilterAutocomplete(value: string) {
-    const filterValue = value ? value.trim().toLowerCase() : '';
-    this.filteredProducts = this.products.filter(product =>
-      product.code.toLowerCase().includes(filterValue) ||
-      product.name.toLowerCase().includes(filterValue) ||
-      product.nameHindi.toLowerCase().includes(filterValue) ||
-      product.unit.toLowerCase().includes(filterValue)
-    );
-  }
-
-  clearFilterAutocomplete() {
-    this.productSearch = '';
-    this.filteredProducts = [];
-    if (this.autocompleteTrigger) {
-      this.autocompleteTrigger.closePanel();
-    }
-    if (this.searchInput && this.searchInput.nativeElement) {
-      this.searchInput.nativeElement.blur();
-    }
-    requestAnimationFrame(() => {
-      this.filteredProducts = this.products;
-    });
-  }
-
-  displayProduct(product?: Product | null): string {
-    return product && product.code ? `${product.code} - ${product.name}` : '';
-  }
-
-  private focusAndSelectSearchInput() {
-    if (this.searchInput && this.searchInput.nativeElement) {
-      const inputElement = this.searchInput.nativeElement as HTMLInputElement;
-      inputElement.focus();
-      setTimeout(() => {
-        if (this.productSearch) {
-          inputElement.select();
-        }
-        if (this.autocompleteTrigger) {
-          this.autocompleteTrigger.openPanel();
-        }
-      }, 0);
-    }
-  }
-
-  handleQtyButton(product: Product, action: 'increment' | 'decrement', event: Event) {
-    event.stopPropagation();
-    if (typeof product.sell_qty !== 'number') product.sell_qty = 0;
-    if (action === 'increment') {
-      product.sell_qty++;
-    } else if (action === 'decrement' && product.sell_qty > 0) {
-      product.sell_qty--;
-    }
-    const matchingProduct = this.products.find(p => p.code === product.code);
-    if (matchingProduct) {
-      matchingProduct.sell_qty = product.sell_qty;
-    }
-    this.selectedProductInDropdown = matchingProduct || product;
-    this.productSearch = this.displayProduct(matchingProduct || product);
-    this.focusAndSelectSearchInput();
-    this.updateDataSource();
-  }
-
-  onSellQtyInput(product: Product, event: any) {
-    event.stopPropagation();
-    const val = parseInt(event.target.value, 10);
-    product.sell_qty = isNaN(val) ? 0 : val;
-    const matchingProduct = this.products.find(p => p.code === product.code);
-    if (matchingProduct) {
-      matchingProduct.sell_qty = product.sell_qty;
-    }
-    this.selectedProductInDropdown = matchingProduct || product;
-    this.productSearch = this.displayProduct(matchingProduct || product);
-    this.focusAndSelectSearchInput();
-    this.updateDataSource();
+    this.dataSource.data = this.products;
+    this.total = this.products.length;
   }
 
   ngAfterViewInit(): void {
@@ -256,5 +165,59 @@ export class HomeComponent implements OnInit, AfterViewInit {
     a.download = 'products.csv';
     a.click();
     window.URL.revokeObjectURL(url);
+  }
+
+  handleQtyButton(product: Product, action: 'increment' | 'decrement', event: Event) {
+    event.stopPropagation();
+    if (typeof product.sell_qty !== 'number') product.sell_qty = 0;
+    if (action === 'increment') {
+      product.sell_qty++;
+    } else if (action === 'decrement' && product.sell_qty > 0) {
+      product.sell_qty--;
+    }
+    // Update products array
+    const matchingProduct = this.products.find(p => p.code === product.code);
+    if (matchingProduct) {
+      matchingProduct.sell_qty = product.sell_qty;
+    }
+  }
+
+  onSellQtyInput(product: Product, event: any) {
+    event.stopPropagation();
+    const val = parseInt(event.target.value, 10);
+    product.sell_qty = isNaN(val) ? 0 : val;
+    // Update products array
+    const matchingProduct = this.products.find(p => p.code === product.code);
+    if (matchingProduct) {
+      matchingProduct.sell_qty = product.sell_qty;
+    }
+  }
+
+  applyFilterAutocomplete(value: string) {
+    const filterValue = value ? value.trim().toLowerCase() : '';
+    this.filteredProducts = this.products.filter(product =>
+      product.code.toLowerCase().includes(filterValue) ||
+      product.name.toLowerCase().includes(filterValue) ||
+      product.nameHindi.toLowerCase().includes(filterValue) ||
+      product.unit.toLowerCase().includes(filterValue)
+    );
+  }
+
+  clearFilterAutocomplete() {
+    this.productSearch = '';
+    this.filteredProducts = [];
+    if (this.autocompleteTrigger) {
+      this.autocompleteTrigger.closePanel();
+    }
+    if (this.searchInput && this.searchInput.nativeElement) {
+      this.searchInput.nativeElement.blur();
+    }
+    requestAnimationFrame(() => {
+      this.filteredProducts = this.products;
+    });
+  }
+
+  displayProduct(product?: Product | null): string {
+    return product && product.code ? `${product.code} - ${product.name}` : '';
   }
 }
