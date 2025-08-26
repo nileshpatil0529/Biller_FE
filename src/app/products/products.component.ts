@@ -81,8 +81,13 @@ export class ProductsComponent implements OnInit, AfterViewInit {
   }
 
   private updateDataSource(): void {
-    this.total = this.products.length;
-    this.dataSource.data = this.products;
+    // For home view, only show products with sell_qty > 0
+    const displayProducts = this.isHomeView 
+      ? this.products.filter(p => (p.sell_qty || 0) > 0)
+      : this.products;
+
+    this.total = displayProducts.length;
+    this.dataSource.data = displayProducts;
   }
   applyFilterAutocomplete(value: string) {
     const filterValue = value ? value.trim().toLowerCase() : '';
@@ -153,11 +158,17 @@ export class ProductsComponent implements OnInit, AfterViewInit {
 
     // Find the matching product from the original products array
     const matchingProduct = this.products.find(p => p.code === product.code);
+    if (matchingProduct) {
+      matchingProduct.sell_qty = product.sell_qty;
+    }
     
     // Update product search and focus input
     this.selectedProductInDropdown = matchingProduct || product;
     this.productSearch = this.displayProduct(matchingProduct || product);
     this.focusAndSelectSearchInput();
+
+    // Update table data to show/hide based on sell_qty
+    this.updateDataSource();
   }
 
   onSellQtyInput(product: Product, event: any) {
@@ -167,11 +178,17 @@ export class ProductsComponent implements OnInit, AfterViewInit {
     
     // Find the matching product from the original products array
     const matchingProduct = this.products.find(p => p.code === product.code);
+    if (matchingProduct) {
+      matchingProduct.sell_qty = product.sell_qty;
+    }
     
     // Update product search and focus input
     this.selectedProductInDropdown = matchingProduct || product;
     this.productSearch = this.displayProduct(matchingProduct || product);
     this.focusAndSelectSearchInput();
+
+    // Update table data to show/hide based on sell_qty
+    this.updateDataSource();
   }
 
   ngAfterViewInit(): void {
