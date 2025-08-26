@@ -13,7 +13,6 @@ import { MatOptionModule } from '@angular/material/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { LoginComponent } from './auth/login.component';
-import { DashboardComponent } from './dashboard/dashboard.component';
 import { SidenavComponent } from './sidenav/sidenav.component';
 import { UsersComponent } from './users/users.component';
 import { ProductsComponent } from './products/products.component';
@@ -32,7 +31,6 @@ import { ConfirmDialogComponent } from './shared/confirm-dialog.component';
 			 declarations: [
 				 AppComponent,
 				 LoginComponent,
-				 DashboardComponent,
 				 SidenavComponent,
 				 UsersComponent,
 				 ProductsComponent,
