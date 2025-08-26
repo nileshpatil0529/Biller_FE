@@ -16,6 +16,7 @@ import { LoginComponent } from './auth/login.component';
 import { SidenavComponent } from './sidenav/sidenav.component';
 import { UsersComponent } from './users/users.component';
 import { ProductsComponent } from './products/products.component';
+import { HomeComponent } from './home/home.component';
 import { ProductsService } from './products/products.service';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatListModule } from '@angular/material/list';
@@ -34,7 +35,8 @@ import { ConfirmDialogComponent } from './shared/confirm-dialog.component';
 				 SidenavComponent,
 				 UsersComponent,
 				 ProductsComponent,
-				 ConfirmDialogComponent
+				 ConfirmDialogComponent,
+				 HomeComponent
 			 ],
 			 imports: [
 				 BrowserModule,
