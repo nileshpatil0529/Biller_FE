@@ -29,6 +29,8 @@ import { MatPaginatorModule } from '@angular/material/paginator';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatMenuModule } from '@angular/material/menu';
 import { ConfirmDialogComponent } from './shared/confirm-dialog.component';
+import { InvoiceComponent } from './invoice/invoice.component';
+import { InvoiceService } from './invoice/invoice.service';
 
 @NgModule({
 			 declarations: [
@@ -38,7 +40,8 @@ import { ConfirmDialogComponent } from './shared/confirm-dialog.component';
 				 UsersComponent,
 				 ProductsComponent,
 				 ConfirmDialogComponent,
-				 HomeComponent
+				 HomeComponent,
+				 InvoiceComponent
 			 ],
 			 imports: [
 				 BrowserModule,
@@ -62,7 +65,7 @@ import { ConfirmDialogComponent } from './shared/confirm-dialog.component';
 				 MatAutocompleteModule,
 				 MatOptionModule
 			 ],
-	providers: [AuthService, AuthGuard, ProductsService],
+	providers: [AuthService, AuthGuard, ProductsService, InvoiceService],
 	bootstrap: [AppComponent]
 })
 export class AppModule { }

@@ -5,6 +5,7 @@ import { UsersComponent } from './users/users.component';
 import { ProductsComponent } from './products/products.component';
 import { HomeComponent } from './home/home.component';
 import { AuthGuard } from './auth/auth.guard';
+import { InvoiceComponent } from './invoice/invoice.component';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -13,6 +14,7 @@ export const routes: Routes = [
   { path: 'reports', component: ProductsComponent, canActivate: [AuthGuard] },
   { path: 'users', component: UsersComponent, canActivate: [AuthGuard] },
   { path: 'setting', component: ProductsComponent, canActivate: [AuthGuard] },
+  { path: 'invoices', component: InvoiceComponent, canActivate: [AuthGuard] },
   { path: '**', redirectTo: 'login' }
 ];
 

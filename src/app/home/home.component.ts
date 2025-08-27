@@ -8,6 +8,8 @@ import { Router } from '@angular/router';
 import { MatAutocompleteTrigger } from '@angular/material/autocomplete';
 import { ClientService, Client } from '../clients/client.service';
 import { InvoiceForm } from './invoice-form.model';
+import { InvoiceService } from '../invoice/invoice.service';
+import { InvoiceComponent } from '../invoice/invoice.component';
 
 @Component({
   selector: 'app-home',
@@ -86,16 +88,43 @@ export class HomeComponent implements OnInit {
   }
 
   onPrintInvoice(): void {
-    // Print logic here
-    alert('Print invoice!');
+    const clientObj = this.clients.find(c => c.id === this.invoiceForm.get('clientId')?.value);
+    const client = clientObj ? clientObj.name : '';
+    const location = this.invoiceForm.get('location')?.value || '';
+    const paymentMode = this.invoiceForm.get('paymentMode')?.value || '';
+    const discount = this.invoiceForm.get('discount')?.value || 0;
+    const paymentStatus = this.invoiceForm.get('paymentStatus')?.value || '';
+    const total = this.dataSource.filteredData.reduce((sum, product) => sum + ((product.sell_qty || 0) * product.price), 0);
+    const grandTotal = total - (total * discount / 100);
+    const products = this.dataSource.filteredData.map(product => ({
+      code: product.code,
+      name: product.name,
+      nameHindi: product.nameHindi,
+      unit: product.unit,
+      price: product.price,
+      sell_qty: typeof product.sell_qty === 'number' ? product.sell_qty : 0,
+      totalValue: ((typeof product.sell_qty === 'number' ? product.sell_qty : 0) * product.price)
+    }));
+    this.invoiceService.addInvoice({
+      client,
+      location,
+      paymentMode,
+      discount,
+      total,
+      grandTotal,
+      paymentStatus,
+      products
+    });
+    this.router.navigate(['/invoices']);
   }
 
   constructor(
-  private fb: FormBuilder,
-  private productsService: ProductsService,
-  private dialog: MatDialog,
-  private router: Router,
-  private clientService: ClientService
+    private fb: FormBuilder,
+    private productsService: ProductsService,
+    private dialog: MatDialog,
+    private router: Router,
+    private clientService: ClientService,
+    private invoiceService: InvoiceService
   ) {
     this.productForm = this.fb.group({
       code: ['', Validators.required],

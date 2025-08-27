@@ -12,6 +12,7 @@ export class SidenavComponent {
   title = 'Biller';
   menuItems = [
     { label: 'Home', route: '/home', icon: 'home' },
+    { label: 'Invoice', route: '/invoices', icon: 'receipt_long' },
     { label: 'Products', route: '/products', icon: 'inventory_2' },
     { label: 'Reports', route: '/reports', icon: 'bar_chart' },
     { label: 'Users', route: '/users', icon: 'people' },
