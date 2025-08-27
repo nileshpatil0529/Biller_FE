@@ -1,5 +1,4 @@
 import { Component, OnInit, ViewChild, AfterViewInit, ElementRef } from '@angular/core';
-import { MatPaginator, PageEvent } from '@angular/material/paginator';
 import { MatTableDataSource } from '@angular/material/table';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
@@ -13,13 +12,13 @@ import { MatAutocompleteTrigger } from '@angular/material/autocomplete';
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.css'],
 })
-export class HomeComponent implements OnInit, AfterViewInit {
+export class HomeComponent implements OnInit {
+  get grandTotal(): number {
+    return this.dataSource.filteredData.reduce((sum, product) => sum + ((product.sell_qty || 0) * product.price), 0);
+  }
   productSearch = '';
   products: Product[] = [];
   dataSource = new MatTableDataSource<Product>();
-  pageSize = 5;
-  pageSizeOptions = [5, 10, 20, 30, 40, 50];
-  total = 0;
   displayedColumns: string[] = [
     'code',
     'name',
@@ -27,16 +26,15 @@ export class HomeComponent implements OnInit, AfterViewInit {
     'unit',
     'price',
     'stockQty',
-    'actions',
+    'qty',
+    'totalValue',
   ];
-  @ViewChild(MatPaginator) paginator!: MatPaginator;
   productForm: FormGroup;
   editingProduct: Product | null = null;
   showForm = false;
   addingRow = false;
   units: string[] = ['pcs', 'box', 'kg', 'ltr', 'meter', 'dozen'];
   filteredProducts: Product[] = [];
-  selectedProductInDropdown: Product | null = null;
   @ViewChild('searchInput') searchInput!: ElementRef;
   @ViewChild(MatAutocompleteTrigger) autocompleteTrigger!: MatAutocompleteTrigger;
 
@@ -61,18 +59,12 @@ export class HomeComponent implements OnInit, AfterViewInit {
   }
 
   private loadProducts(): void {
-    this.products = this.productsService.getProducts();
+    const allProducts = this.productsService.getProducts();
+    this.products = allProducts.filter(p => p.sell_qty && p.sell_qty > 0);
     this.dataSource.data = this.products;
-    this.total = this.products.length;
   }
 
-  ngAfterViewInit(): void {
-    this.dataSource.paginator = this.paginator;
-  }
 
-  onMatPage(event: PageEvent): void {
-    this.pageSize = event.pageSize;
-  }
 
   openForm(product: Product): void {
     this.showForm = true;
@@ -93,19 +85,8 @@ export class HomeComponent implements OnInit, AfterViewInit {
     this.addingRow = true;
     this.showForm = false;
     this.productForm.reset({ price: 0, stockQty: 0 });
-    this.products = [
-      {
-        code: '',
-        name: '',
-        nameHindi: '',
-        unit: '',
-        price: 0,
-        stockQty: 0,
-      },
-      ...this.productsService.getProducts(),
-    ];
+    this.products = [];
     this.dataSource.data = this.products;
-    this.total = this.products.length;
   }
 
   saveProduct(): void {
@@ -167,7 +148,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
     window.URL.revokeObjectURL(url);
   }
 
-  handleQtyButton(product: Product, action: 'increment' | 'decrement', event: Event) {
+  handleQtyButton(product: Product, action: 'increment' | 'decrement', event: Event, fromAutocomplete: boolean = false) {
     event.stopPropagation();
     if (typeof product.sell_qty !== 'number') product.sell_qty = 0;
     if (action === 'increment') {
@@ -175,27 +156,49 @@ export class HomeComponent implements OnInit, AfterViewInit {
     } else if (action === 'decrement' && product.sell_qty > 0) {
       product.sell_qty--;
     }
-    // Update products array
-    const matchingProduct = this.products.find(p => p.code === product.code);
+    const allProducts = this.productsService.getProducts();
+    const matchingProduct = allProducts.find(p => p.code === product.code);
     if (matchingProduct) {
       matchingProduct.sell_qty = product.sell_qty;
+    }
+    if (product.sell_qty > 0) {
+      if (!this.products.find(p => p.code === product.code)) {
+        this.products.unshift(product);
+      }
+    } else {
+      this.products = this.products.filter(p => p.code !== product.code);
+    }
+    this.dataSource.data = this.products;
+    if (fromAutocomplete && this.searchInput && this.searchInput.nativeElement) {
+      this.productSearch = '';
+      this.searchInput.nativeElement.value = '';
+      this.searchInput.nativeElement.focus();
     }
   }
 
   onSellQtyInput(product: Product, event: any) {
-    event.stopPropagation();
-    const val = parseInt(event.target.value, 10);
-    product.sell_qty = isNaN(val) ? 0 : val;
-    // Update products array
-    const matchingProduct = this.products.find(p => p.code === product.code);
+  event.stopPropagation();
+  const val = parseFloat(event.target.value);
+  product.sell_qty = isNaN(val) ? 0 : val;
+    const allProducts = this.productsService.getProducts();
+    const matchingProduct = allProducts.find(p => p.code === product.code);
     if (matchingProduct) {
       matchingProduct.sell_qty = product.sell_qty;
     }
+    if (product.sell_qty >= 0) {
+      if (!this.products.find(p => p.code === product.code)) {
+        this.products.unshift(product);
+      }
+    } else {
+      this.products = this.products.filter(p => p.code !== product.code);
+    }
+    this.dataSource.data = this.products;
   }
 
   applyFilterAutocomplete(value: string) {
     const filterValue = value ? value.trim().toLowerCase() : '';
-    this.filteredProducts = this.products.filter(product =>
+    const allProducts = this.productsService.getProducts();
+    this.filteredProducts = allProducts.filter(product =>
       product.code.toLowerCase().includes(filterValue) ||
       product.name.toLowerCase().includes(filterValue) ||
       product.nameHindi.toLowerCase().includes(filterValue) ||
@@ -213,7 +216,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
       this.searchInput.nativeElement.blur();
     }
     requestAnimationFrame(() => {
-      this.filteredProducts = this.products;
+      this.filteredProducts = this.productsService.getProducts();
     });
   }
 

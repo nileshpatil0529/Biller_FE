@@ -90,9 +90,7 @@ body.dark-theme .search-field.mat-form-field {
     align-items: center;
 }
 .search-field {
-    min-width: 220px;
     flex: 1;
-    margin-left: 12px;
 }
 /* Minimal style for no data message (shared with users table) */
 .no-data-message {
@@ -101,5 +99,3 @@ body.dark-theme .search-field.mat-form-field {
     font-size: 1.1rem;
     padding: 24px 0;
 }
-
-/* ...existing code... */

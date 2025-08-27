@@ -10,28 +10,10 @@
     </mat-menu>
     <mat-form-field appearance="outline" class="search-field">
       <mat-label>Search Products</mat-label>
-      <input #searchInput type="text" matInput [matAutocomplete]="auto" [(ngModel)]="productSearch" (ngModelChange)="applyFilterAutocomplete($event)" placeholder="Type to search..." />
-      <button mat-icon-button matSuffix (click)="clearFilterAutocomplete(); $event.preventDefault(); $event.stopPropagation();">
+      <input matInput type="text" [(ngModel)]="productSearch" (ngModelChange)="applyFilter($event)" placeholder="Type to search..." />
+      <button mat-icon-button matSuffix (click)="clearSearch(); $event.preventDefault(); $event.stopPropagation();">
         <mat-icon>close</mat-icon>
       </button>
-      <mat-autocomplete #auto="matAutocomplete" [displayWith]="displayProduct">
-        <mat-option *ngFor="let product of filteredProducts" [value]="product" [disabled]="true" class="autocomplete-option-table">
-          <table class="autocomplete-table pointer-none">
-            <tr>
-              <td class="code-col">{{ product.code }}</td>
-              <td class="name-col">{{ product.name }}</td>
-              <td class="name-hindi-col">{{ product.nameHindi }}</td>
-              <td class="unit-col">{{ product.unit }}</td>
-              <td class="price-col">₹{{ product.price }}</td>
-              <td class="stock-col">{{ product.stockQty }}</td>
-              <td class="actions-col">
-              </td>
-            </tr>
-          </table>
-        </mat-option>
-        <!-- No header row needed as per user request -->
-        <!-- Removed group button from below dropdown, now in each row -->
-      </mat-autocomplete>
     </mat-form-field>
   </div>
   <table mat-table [dataSource]="dataSource" class="mat-elevation-z2 w-100 products-table">

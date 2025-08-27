@@ -1,3 +1,7 @@
+/* Force autocomplete dropdown text color to #1976d2 in home autocomplete */
+::ng-deep .mat-mdc-option .autocomplete-table td {
+    color: #009688 !important; /* Material green, good contrast on both themes */
+}
 /* Autocomplete dropdown styling */
 ::ng-deep .mat-mdc-option.mdc-list-item--disabled {
     opacity: 1 !important;
@@ -92,7 +96,7 @@ body.dark-theme .search-field.mat-form-field {
 .search-field {
     min-width: 220px;
     flex: 1;
-    margin-left: 12px;
+    margin-left: 0;
 }
 /* Minimal style for no data message (shared with users table) */
 .no-data-message {

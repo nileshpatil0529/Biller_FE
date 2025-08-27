@@ -5,7 +5,8 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatAutocompleteTrigger } from '@angular/material/autocomplete';
 import { MatDialog } from '@angular/material/dialog';
 import { ConfirmDialogComponent } from '../shared/confirm-dialog.component';
-import { ProductsService, Product } from './products.service';
+import { ProductsService } from './products.service';
+import type { Product } from './products.service';
 import { Router } from '@angular/router';
 
 
@@ -20,12 +21,11 @@ export class ProductsComponent implements OnInit, AfterViewInit {
   productSearch = '';
   products: Product[] = [];
   filteredProducts: Product[] = [];
-  selectedProductInDropdown: Product | null = null;
   
   // Table properties
   dataSource = new MatTableDataSource<Product>();
   pageSize = 5;
-  pageSizeOptions = [5, 10, 20, 30, 40, 50];
+  pageSizeOptions = [5, 10, 20, 30];
   total = 0;
   displayedColumns: string[] = [
     'code',
@@ -83,6 +83,27 @@ export class ProductsComponent implements OnInit, AfterViewInit {
     );
   }
 
+  /** Opens the edit form for a product */
+  openForm(product: Product): void {
+    this.editingProduct = product;
+    this.showForm = true;
+    this.productForm.setValue({
+      code: product.code,
+      name: product.name,
+      nameHindi: product.nameHindi,
+      unit: product.unit,
+      price: product.price,
+      stockQty: product.stockQty,
+    });
+  }
+
+  /** Closes the edit form */
+  closeForm(): void {
+    this.showForm = false;
+    this.editingProduct = null;
+    this.productForm.reset({ price: 0, stockQty: 0 });
+  }
+
   @ViewChild('searchInput') searchInput!: ElementRef;
   @ViewChild(MatAutocompleteTrigger) autocompleteTrigger!: MatAutocompleteTrigger;
 
@@ -102,10 +123,21 @@ export class ProductsComponent implements OnInit, AfterViewInit {
     requestAnimationFrame(() => {
       this.filteredProducts = this.products;
     });
+    }
+  
+      applyFilter(value: string) {
+    const filterValue = value ? value.trim().toLowerCase() : '';
+    this.dataSource.data = this.products.filter((product: Product) =>
+      product.code.toLowerCase().includes(filterValue) ||
+      product.name.toLowerCase().includes(filterValue) ||
+      product.nameHindi.toLowerCase().includes(filterValue) ||
+      product.unit.toLowerCase().includes(filterValue)
+    );
   }
 
-  displayProduct(product?: Product | null): string {
-    return product && product.code ? `${product.code} - ${product.name}` : '';
+  clearSearch() {
+    this.productSearch = '';
+    this.dataSource.data = this.products;
   }
 
   private focusAndSelectSearchInput() {
@@ -136,20 +168,6 @@ export class ProductsComponent implements OnInit, AfterViewInit {
 
   onMatPage(event: PageEvent): void {
     this.pageSize = event.pageSize;
-  }
-
-  openForm(product: Product): void {
-    this.showForm = true;
-    this.editingProduct = product;
-    this.productForm.patchValue(product);
-    this.addingRow = false;
-  }
-
-  closeForm(): void {
-    this.showForm = false;
-    this.editingProduct = null;
-    this.productForm.reset({ price: 0, stockQty: 0 });
-    this.addingRow = false;
   }
 
   addRow(): void {
