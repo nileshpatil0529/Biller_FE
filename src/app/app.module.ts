@@ -8,6 +8,8 @@ import { AuthGuard } from './auth/auth.guard';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { MatInputModule } from '@angular/material/input';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatSelectModule } from '@angular/material/select';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatOptionModule } from '@angular/material/core';
 import { MatButtonModule } from '@angular/material/button';
@@ -45,6 +47,8 @@ import { ConfirmDialogComponent } from './shared/confirm-dialog.component';
 				 ReactiveFormsModule,
 				 BrowserAnimationsModule,
 				 MatInputModule,
+				 MatFormFieldModule,
+				 MatSelectModule,
 				 MatButtonModule,
 				 MatCardModule,
 				 MatSidenavModule,

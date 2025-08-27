@@ -6,6 +6,8 @@ import { ConfirmDialogComponent } from '../shared/confirm-dialog.component';
 import { ProductsService, Product } from '../products/products.service';
 import { Router } from '@angular/router';
 import { MatAutocompleteTrigger } from '@angular/material/autocomplete';
+import { ClientService, Client } from '../clients/client.service';
+import { InvoiceForm } from './invoice-form.model';
 
 @Component({
   selector: 'app-home',
@@ -13,8 +15,11 @@ import { MatAutocompleteTrigger } from '@angular/material/autocomplete';
   styleUrls: ['./home.component.css'],
 })
 export class HomeComponent implements OnInit {
+  showInvoiceForm = false;
   get grandTotal(): number {
-    return this.dataSource.filteredData.reduce((sum, product) => sum + ((product.sell_qty || 0) * product.price), 0);
+    const total = this.dataSource.filteredData.reduce((sum, product) => sum + ((product.sell_qty || 0) * product.price), 0);
+    const discount = this.invoiceForm?.get('discount')?.value || 0;
+    return total - (total * discount / 100);
   }
   productSearch = '';
   products: Product[] = [];
@@ -37,12 +42,60 @@ export class HomeComponent implements OnInit {
   filteredProducts: Product[] = [];
   @ViewChild('searchInput') searchInput!: ElementRef;
   @ViewChild(MatAutocompleteTrigger) autocompleteTrigger!: MatAutocompleteTrigger;
+  invoiceForm: FormGroup;
+  clients: Client[] = [];
+  locations: string[] = ['Table 1', 'Table 2', 'Counter 1', 'Counter 2'];
+  paymentModes: string[] = ['Online', 'Cash', 'Credit'];
+  paymentStatuses: string[] = ['Paid', 'Unpaid'];
+  discount: number = 0;
+  isEditMode: boolean = false; // Set this based on your routing or logic
+
+  clearInvoiceForm(): void {
+    this.invoiceForm.reset({
+      clientId: null,
+      invoiceNumber: '',
+      location: '',
+      paymentMode: '',
+      discount: 0,
+      grandTotal: 0,
+      paymentStatus: 'Unpaid',
+    });
+    this.productSearch = '';
+    this.filteredProducts = [];
+  }
+
+  updateGrandTotal(): void {
+    const total = this.grandTotal;
+    const discount = this.invoiceForm.get('discount')?.value || 0;
+    const discountedTotal = total - (total * discount / 100);
+    this.invoiceForm.patchValue({ grandTotal: discountedTotal });
+  }
+
+  incrementDiscount(): void {
+    let discount = this.invoiceForm.get('discount')?.value || 0;
+    discount = Math.min(discount + 5, 100);
+    this.invoiceForm.patchValue({ discount });
+    this.updateGrandTotal();
+  }
+
+  decrementDiscount(): void {
+    let discount = this.invoiceForm.get('discount')?.value || 0;
+    discount = Math.max(discount - 5, 0);
+    this.invoiceForm.patchValue({ discount });
+    this.updateGrandTotal();
+  }
+
+  onPrintInvoice(): void {
+    // Print logic here
+    alert('Print invoice!');
+  }
 
   constructor(
-    private fb: FormBuilder,
-    private productsService: ProductsService,
-    private dialog: MatDialog,
-    private router: Router
+  private fb: FormBuilder,
+  private productsService: ProductsService,
+  private dialog: MatDialog,
+  private router: Router,
+  private clientService: ClientService
   ) {
     this.productForm = this.fb.group({
       code: ['', Validators.required],
@@ -52,10 +105,21 @@ export class HomeComponent implements OnInit {
       price: [0, [Validators.required, Validators.min(0)]],
       stockQty: [0, [Validators.required, Validators.min(0)]],
     });
+    this.invoiceForm = this.fb.group({
+      clientId: [null],
+      invoiceNumber: [{ value: '', disabled: true }],
+      location: ['', Validators.required],
+      paymentMode: ['', Validators.required],
+      discount: [0],
+      grandTotal: [{ value: 0, disabled: true }],
+      paymentStatus: ['Unpaid', Validators.required],
+    });
   }
 
   ngOnInit(): void {
     this.loadProducts();
+    this.clients = this.clientService.getClients();
+    this.updateGrandTotal();
   }
 
   private loadProducts(): void {
@@ -222,5 +286,13 @@ export class HomeComponent implements OnInit {
 
   displayProduct(product?: Product | null): string {
     return product && product.code ? `${product.code} - ${product.name}` : '';
+  }
+
+  clearAllSellQty(): void {
+    const allProducts = this.productsService.getProducts();
+    allProducts.forEach(p => p.sell_qty = 0);
+    this.products = [];
+    this.dataSource.data = [];
+    this.filteredProducts = allProducts;
   }
 }
